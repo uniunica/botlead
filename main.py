@@ -2,14 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from time import sleep
-from googlesearch import search # Importa a função search
+from googlesearch import search  # Importa a função search
+import csv
 
 # --- Configurações Iniciais ---
 # Lista de palavras-chave para busca!
 QUERIES = [
-    "escolas técnicas campinas",
-    "colégios profissionalizantes campinas",
-    "empresas de educação campinas"
+    "colegio profissionalizante guarulhos",
 ]
 
 # Número de resultados do Google para processar por query
@@ -34,11 +33,12 @@ def fetch_page_content(url):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # Levanta um erro para códigos HTTP 4xx/5xx
+        response.raise_for_status()  # Levanta um erro para códigos HTTP 4xx/5xx
         return response.text
     except requests.exceptions.RequestException as e:
         print(f"Erro ao buscar {url}: {e}")
         return None
+
 
 def extract_contact_info(html_content, url):
     """Extrai nome (do título), emails e telefones do conteúdo HTML."""
@@ -48,10 +48,10 @@ def extract_contact_info(html_content, url):
     soup = BeautifulSoup(html_content, 'html.parser')
     data = {
         "nome_site": soup.title.string.strip() if soup.title else "N/A",
-        "emails": set(), # Usar set para evitar duplicatas
+        "emails": set(),  # Usar set para evitar duplicatas
         "telefones": set(),
         "url": url,
-        "endereco_estimado": "Não extraído" # Placeholder
+        "endereco_estimado": "Não extraído"  # Placeholder
     }
 
     # Extrair emails
@@ -60,7 +60,6 @@ def extract_contact_info(html_content, url):
         # Filtro simples para evitar emails comuns de domínios de imagem/fontes
         if not any(domain in email for domain in ['w3.org', '.png', '.jpg', '.gif', 'example.com', 'sentry.io']):
              data["emails"].add(email.lower())
-
 
     # Extrair telefones
     # O texto do body pode ser mais produtivo para telefones e emails do que o html_content inteiro
@@ -76,11 +75,12 @@ def extract_contact_info(html_content, url):
     possible_addresses = []
     for keyword in address_keywords:
         # Busca por tags que contenham a palavra-chave (case-insensitive)
-        tags_with_keyword = soup.find_all(string=re.compile(keyword, re.IGNORECASE))
+        tags_with_keyword = soup.find_all(
+            string=re.compile(keyword, re.IGNORECASE))
         for tag_content in tags_with_keyword:
             parent_text = tag_content.find_parent().get_text(separator=' ', strip=True)
             # Limita o tamanho do texto para evitar capturas muito grandes e irrelevantes
-            if len(parent_text) < 200: # Ajuste este limite conforme necessário
+            if len(parent_text) < 200:  # Ajuste este limite conforme necessário
                 possible_addresses.append(parent_text)
 
     if possible_addresses:
@@ -89,11 +89,14 @@ def extract_contact_info(html_content, url):
         # Por simplicidade, vou concatenar os primeiros encontrados (até um limite)
         # e remover duplicatas mantendo a ordem
         unique_addresses = list(dict.fromkeys(possible_addresses))
-        data["endereco_estimado"] = " | ".join(unique_addresses[:2]) # Pega até 2 para não ficar muito longo
+        # Pega até 2 para não ficar muito longo
+        data["endereco_estimado"] = " | ".join(unique_addresses[:2])
 
     return data
 
 # --- Lógica Principal ---
+
+
 def main():
     """Função principal para buscar e extrair leads."""
     all_leads = []
@@ -106,7 +109,8 @@ def main():
             # A 'googlesearch-python' usa search(query, num_results=...)
             # O parâmetro 'lang' ajuda a obter resultados em português do Brasil.
             # 'pause' adiciona um delay entre as buscas ao Google para evitar bloqueios.
-            search_results_urls = list(search(query, num_results=NUM_RESULTS_PER_QUERY, lang='pt-br', pause=5.0))
+            search_results_urls = list(
+                search(query, num_results=NUM_RESULTS_PER_QUERY, lang='pt-br'))
 
             if not search_results_urls:
                 print(f"Nenhum resultado encontrado para '{query}'.")
@@ -118,41 +122,48 @@ def main():
                 if html_content:
                     contact_info = extract_contact_info(html_content, url)
                     if contact_info.get("emails") or contact_info.get("telefones"):
-                        print(f"    -> Lead encontrado: {contact_info.get('nome_site')}")
-                        print(f"       Emails: {', '.join(contact_info.get('emails', []))}")
-                        print(f"       Telefones: {', '.join(contact_info.get('telefones', []))}")
-                        print(f"       Endereço Estimado: {contact_info.get('endereco_estimado', 'N/A')}")
+                        print(
+                            f"    -> Lead encontrado: {contact_info.get('nome_site')}")
+                        print(
+                            f"       Emails: {', '.join(contact_info.get('emails', []))}")
+                        print(
+                            f"       Telefones: {', '.join(contact_info.get('telefones', []))}")
+                        print(
+                            f"       Endereço Estimado: {contact_info.get('endereco_estimado', 'N/A')}")
                         all_leads.append(contact_info)
                     else:
-                        print(f"    -> Nenhuma informação de contato clara encontrada em {contact_info.get('nome_site')}.")
-                sleep(REQUEST_DELAY) # Pausa entre o processamento de cada página
+                        print(
+                            f"    -> Nenhuma informação de contato clara encontrada em {contact_info.get('nome_site')}.")
+                # Pausa entre o processamento de cada página
+                sleep(REQUEST_DELAY)
 
         except Exception as e:
             print(f"Ocorreu um erro ao processar a query '{query}': {e}")
             print("Isso pode ser devido a bloqueio do Google. Tente aumentar o 'pause' ou usar menos queries/resultados.")
-            sleep(10) # Pausa maior se houver erro na busca
+            sleep(10)  # Pausa maior se houver erro na busca
 
     print("\n--- Relatório Final de Leads ---")
     if all_leads:
         for lead in all_leads:
             print(f"Nome/Site: {lead['nome_site']}")
             print(f"  URL: {lead['url']}")
-            print(f"  Emails: {', '.join(lead['emails']) if lead['emails'] else 'Nenhum'}")
-            print(f"  Telefones: {', '.join(lead['telefones']) if lead['telefones'] else 'Nenhum'}")
+            print(
+                f"  Emails: {', '.join(lead['emails']) if lead['emails'] else 'Nenhum'}")
+            print(
+                f"  Telefones: {', '.join(lead['telefones']) if lead['telefones'] else 'Nenhum'}")
             print(f"  Endereço Estimado: {lead['endereco_estimado']}")
             print("-" * 30)
     else:
         print("Nenhum lead com email ou telefone foi encontrado.")
 
-    # Opcional: Salvar em um arquivo CSV
-    # import csv
-    # if all_leads:
-    #     keys = all_leads[0].keys()
-    #     with open('leads.csv', 'w', newline='', encoding='utf-8') as output_file:
-    #         dict_writer = csv.DictWriter(output_file, fieldnames=keys)
-    #         dict_writer.writeheader()
-    #         dict_writer.writerows(all_leads)
-    #     print("\nLeads salvos em leads.csv")
+    # Salvar em um arquivo CSV
+    if all_leads:
+        keys = all_leads[0].keys()
+        with open('leads.csv', 'w', newline='', encoding='utf-8') as output_file:
+            dict_writer = csv.DictWriter(output_file, fieldnames=keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(all_leads)
+        print("\nLeads salvos em leads.csv")
 
 if __name__ == "__main__":
     main()
