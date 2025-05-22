@@ -4,11 +4,12 @@ import re
 from time import sleep
 from googlesearch import search  # Importa a função search
 import csv
+import sys
 
 # --- Configurações Iniciais ---
 # Lista de palavras-chave para busca!
 QUERIES = [
-    "colegio profissionalizante guarulhos",
+    "escola tecnica campinas",
 ]
 
 # Número de resultados do Google para processar por query
@@ -159,7 +160,7 @@ def main():
     # Salvar em um arquivo CSV
     if all_leads:
         keys = all_leads[0].keys()
-        with open('leads.csv', 'w', newline='', encoding='utf-8') as output_file:
+        with open('leads.csv', 'w', newline='', encoding='utf-8-sig') as output_file:
             dict_writer = csv.DictWriter(output_file, fieldnames=keys)
             dict_writer.writeheader()
             dict_writer.writerows(all_leads)
@@ -167,3 +168,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Configuração para Windows
+if sys.platform.startswith("win"):
+    import os
+    os.system('chcp 65001')
