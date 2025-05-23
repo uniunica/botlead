@@ -11,11 +11,11 @@ import os
 # --- Configurações Iniciais ---
 # Lista de palavras-chave para busca!
 QUERIES = [
-    "escola tecnica joão pessoa",
+    "escola tecnica londrina",
 ]
 
 # Número de resultados do Google para processar por query
-NUM_RESULTS_PER_QUERY = 10
+NUM_RESULTS_PER_QUERY = 100
 
 # Delay entre requisições para não sobrecarregar os servidores (em segundos)
 REQUEST_DELAY = 2
@@ -28,6 +28,7 @@ EMAIL_REGEX = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 PHONE_REGEX = r"\(?\b\d{2}\b\)?\s?\b\d{4,5}\b-?\b\d{4}\b"
 
 # --- Funções Auxiliares ---
+
 
 def fetch_page_content(url):
     """Busca o conteúdo HTML de uma URL."""
@@ -62,7 +63,7 @@ def extract_contact_info(html_content, url):
     for email in found_emails:
         # Filtro simples para evitar emails comuns de domínios de imagem/fontes
         if not any(domain in email for domain in ['w3.org', '.png', '.jpg', '.gif', 'example.com', 'sentry.io']):
-             data["emails"].add(email.lower())
+            data["emails"].add(email.lower())
 
     # Extrair telefones
     # O texto do body pode ser mais produtivo para telefones e emails do que o html_content inteiro
@@ -99,13 +100,16 @@ def extract_contact_info(html_content, url):
 
 # --- Funções Auxiliares Aprimoradas ---
 
+
 def generate_filename(base_name):
     """Gera um nome de arquivo único com timestamp"""
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{base_name}_{now}.csv"
 
-def save_leads_to_csv(leads, filename_prefix='leads'):
-    """Salva os leads em CSV com estrutura organizada"""
+
+def save_leads_to_csv(leads, filename_prefix='leads_coletados'):
+    """Salva os leads em CSV com estrutura organizada, otimizado para Excel."""
+
     if not leads:
         print("Nenhum lead para salvar.")
         return
@@ -114,46 +118,64 @@ def save_leads_to_csv(leads, filename_prefix='leads'):
 
     # Preparar dados para CSV com colunas estruturadas
     csv_rows = []
+    max_emails_found = 0
+    max_phones_found = 0
+
+    # Primeiro, iterar para determinar o número máximo de emails/telefones
+    # e para preparar as linhas básicas.
+    for lead in leads:
+        if lead.get('emails'):
+            max_emails_found = max(
+                max_emails_found, len(lead.get('emails', set())))
+        if lead.get('telefones'):
+            max_phones_found = max(max_phones_found, len(
+                lead.get('telefones', set())))
+
+    # Agora, construir as linhas, garantindo colunas para todos os emails/telefones
     for lead in leads:
         row = {
-            'Nome do Site': lead.get('nome_site', 'N/A'),
+            'Nome do Site/Empresa': lead.get('nome_site', 'N/A'),
             'URL': lead.get('url', ''),
             'Endereço Estimado': lead.get('endereco_estimado', 'Não extraído'),
-            'Data Coleta': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            'Data Coleta': datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Data da gravação do CSV
         }
 
         # Adicionar emails em colunas separadas (Email 1, Email 2, etc.)
         emails = list(lead.get('emails', set()))
-        for i, email in enumerate(emails, 1):
-            row[f'Email {i}'] = email
+        for i in range(max_emails_found):
+            row[f'Email {i+1}'] = emails[i] if i < len(emails) else ''
 
         # Adicionar telefones em colunas separadas (Telefone 1, Telefone 2, etc.)
         phones = list(lead.get('telefones', set()))
-        for i, phone in enumerate(phones, 1):
-            row[f'Telefone {i}'] = phone
+        for i in range(max_phones_found):
+            row[f'Telefone {i+1}'] = phones[i] if i < len(phones) else ''
 
         csv_rows.append(row)
 
-    # Determinar todas as colunas possíveis (incluindo Email 1..N, Telefone 1..N)
-    all_columns = set()
-    for row in csv_rows:
-        all_columns.update(row.keys())
+    # Determinar todas as colunas possíveis de forma ordenada
+    base_columns = ['Nome do Site/Empresa',
+                    'URL', 'Endereço Estimado', 'Data Coleta']
+    email_columns = [f'Email {i+1}' for i in range(max_emails_found)]
+    phone_columns = [f'Telefone {i+1}' for i in range(max_phones_found)]
 
-    # Ordenar colunas de forma consistente
-    base_columns = ['Nome do Site', 'URL', 'Endereço Estimado', 'Data Coleta']
-    email_columns = sorted([c for c in all_columns if c.startswith('Email')])
-    phone_columns = sorted([c for c in all_columns if c.startswith('Telefone')])
     fieldnames = base_columns + email_columns + phone_columns
 
     # Escrever arquivo CSV
     try:
-        with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(csv_rows)
-        print(f"\nDados salvos em {filename}")
+        # Usar delimiter=';' para melhor compatibilidade com Excel em algumas regiões
+        # Usar encoding='utf-8-sig' para que o Excel entenda acentos corretamente
+        with open(filename, 'w', newline='', encoding='utf-8-sig', errors='replace') as csvfile:
+            writer = csv.DictWriter(
+                csvfile, fieldnames=fieldnames, delimiter=';')
+            writer.writeheader()  # Escreve o cabeçalho (nomes das colunas)
+            writer.writerows(csv_rows)  # Escreve todas as linhas de dados
+        print(f"\nLeads salvos com sucesso em: {filename}")
+        print(f"O arquivo foi salvo com ';' como delimitador e codificação UTF-8 com BOM para melhor compatibilidade com Excel.")
+    except IOError as e:
+        print(f"Erro de E/S ao salvar o arquivo CSV: {e}")
     except Exception as e:
-        print(f"Erro ao salvar CSV: {e}")
+        print(f"Ocorreu um erro inesperado ao salvar o CSV: {e}")
+
 # --- Lógica Principal ---
 
 def main():
@@ -177,13 +199,18 @@ def main():
                 if html_content:
                     contact_info = extract_contact_info(html_content, url)
                     if contact_info.get("emails") or contact_info.get("telefones"):
-                        print(f"    -> Lead encontrado: {contact_info.get('nome_site')}")
-                        print(f"       Emails: {', '.join(contact_info.get('emails', []))}")
-                        print(f"       Telefones: {', '.join(contact_info.get('telefones', []))}")
-                        print(f"       Endereço Estimado: {contact_info.get('endereco_estimado', 'N/A')}")
+                        print(
+                            f"    -> Lead encontrado: {contact_info.get('nome_site')}")
+                        print(
+                            f"       Emails: {', '.join(contact_info.get('emails', []))}")
+                        print(
+                            f"       Telefones: {', '.join(contact_info.get('telefones', []))}")
+                        print(
+                            f"       Endereço Estimado: {contact_info.get('endereco_estimado', 'N/A')}")
                         all_leads.append(contact_info)
                     else:
-                        print(f"    -> Nenhuma informação de contato clara encontrada em {contact_info.get('nome_site')}.")
+                        print(
+                            f"    -> Nenhuma informação de contato clara encontrada em {contact_info.get('nome_site')}.")
                 sleep(REQUEST_DELAY)
 
         except Exception as e:
@@ -195,8 +222,10 @@ def main():
         for lead in all_leads:
             print(f"\nNome/Site: {lead['nome_site']}")
             print(f"URL: {lead['url']}")
-            print(f"Emails: {', '.join(lead['emails']) if lead['emails'] else 'Nenhum'}")
-            print(f"Telefones: {', '.join(lead['telefones']) if lead['telefones'] else 'Nenhum'}")
+            print(
+                f"Emails: {', '.join(lead['emails']) if lead['emails'] else 'Nenhum'}")
+            print(
+                f"Telefones: {', '.join(lead['telefones']) if lead['telefones'] else 'Nenhum'}")
             print(f"Endereço Estimado: {lead['endereco_estimado']}")
         print("\n" + "="*50)
 
@@ -204,6 +233,7 @@ def main():
         save_leads_to_csv(all_leads)
     else:
         print("Nenhum lead com email ou telefone foi encontrado.")
+
 
 if __name__ == "__main__":
     main()
