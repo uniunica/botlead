@@ -16,7 +16,7 @@ def index():
         query = f"{tipo} {cidade} {estado}"
         arquivo_csv = buscar_leads([query], quantidade)
 
-        return f"<p>Busca finalizada! <a href='/static/leads/{arquivo_csv}'>Clique aqui para baixar o arquivo</a></p>"
+        return render_template('resultado.html', arquivo_csv=arquivo_csv, cidade=cidade, estado=estado, tipo=tipo)
 
     return render_template('index.html')
 
