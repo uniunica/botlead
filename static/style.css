@@ -1,0 +1,73 @@
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  color: #333;
+  padding: 20px;
+}
+/* Container principal */
+.corpo {
+  background-color: #ffffffcc;
+  border-radius: 12px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+/* Título */
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #5e2b97;
+  margin-bottom: 30px;
+}
+/* Formulário */
+form {
+  display: flex;
+  flex-direction: column;
+}
+/* Labels */
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #4c2e85;
+}
+/* Inputs e select */
+input[type="text"],
+input[type="number"],
+select {
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #a18cd1;
+}
+/* Botão */
+button {
+  padding: 12px;
+  background: #7b2cbf;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+button:hover {
+  background: #5a189a;
+}

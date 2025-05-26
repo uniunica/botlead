@@ -11,7 +11,7 @@ import os
 # --- Configurações Iniciais ---
 # Lista de palavras-chave para busca!
 QUERIES = [
-    "escola tecnica londrina",
+    "escola tecnica campinas",
 ]
 
 # Número de resultados do Google para processar por query
