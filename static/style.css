@@ -1,4 +1,18 @@
-/* Reset básico */
+:root {
+  --primary-color: #7b2cbf;
+  --primary-dark: #5a189a;
+  --primary-light: #9d4edd;
+  --secondary-color: #f72585;
+  --gradient-start: #a18cd1;
+  --gradient-end: #fbc2eb;
+  --text-dark: #2b2d42;
+  --text-light: #f8f9fa;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --border-radius: 12px;
+}
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,65 +23,180 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
-  color: #333;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  background: linear-gradient(
+    135deg,
+    var(--gradient-start),
+    var(--gradient-end)
+  );
+  color: var(--text-dark);
   padding: 20px;
+  line-height: 1.6;
 }
-/* Container principal */
-.corpo {
-  background-color: #ffffffcc;
-  border-radius: 12px;
-  padding: 40px;
+/* Efeito de partículas no fundo (opcional) */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><circle cx="25" cy="25" r="2" fill="white"/><circle cx="75" cy="50" r="1.5" fill="white"/><circle cx="15" cy="80" r="1" fill="white"/><circle cx="90" cy="20" r="1.5" fill="white"/></svg>');
+  z-index: -1;
 }
-/* Título */
+/* Container principal com efeito de vidro (glassmorphism) */
+.corpo {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+/* Título com gradiente e efeito 3D sutil */
 h1 {
   text-align: center;
-  font-size: 1.8rem;
-  color: #5e2b97;
-  margin-bottom: 30px;
+  font-size: 2rem;
+  background: linear-gradient(
+    45deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  position: relative;
+  padding-bottom: 0.5rem;
 }
-/* Formulário */
+/* Linha decorativa abaixo do título */
+h1::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  border-radius: 3px;
+}
+/* Formulário com espaçamento melhorado */
 form {
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
 }
-/* Labels */
+/* Labels estilizadas */
 label {
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #4c2e85;
+  color: var(--primary-dark);
+  font-size: 0.9rem;
+  display: block;
+  transition: var(--transition);
 }
-/* Inputs e select */
+/* Inputs modernizados com efeito de foco animado */
 input[type="text"],
 input[type="number"],
 select {
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  border: 2px solid rgba(123, 44, 191, 0.2);
+  border-radius: var(--border-radius);
   font-size: 1rem;
-  transition: border-color 0.3s ease;
+  transition: var(--transition);
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-sm);
 }
+/* Efeito de foco com sombra e borda colorida */
 input:focus,
 select:focus {
   outline: none;
-  border-color: #a18cd1;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.2);
+  transform: translateY(-1px);
 }
-/* Botão */
+/* Placeholder estilizado */
+input::placeholder {
+  color: #adb5bd;
+  opacity: 1;
+}
+/* Botão com gradiente e efeito hover animado */
 button {
-  padding: 12px;
-  background: #7b2cbf;
-  color: #fff;
-  font-weight: bold;
+  padding: 0.75rem;
+  background: linear-gradient(
+    45deg,
+    var(--primary-color),
+    var(--secondary-color)
+  );
+  color: var(--text-light);
+  font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: var(--transition);
+  box-shadow: var(--shadow-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  position: relative;
+  overflow: hidden;
 }
+/* Efeito de brilho no hover */
 button:hover {
-  background: #5a189a;
+  background: linear-gradient(45deg, var(--primary-dark), #d00069);
+  box-shadow: 0 5px 15px rgba(122, 44, 191, 0.4);
+  transform: translateY(-2px);
+}
+/* Efeito de onda ao clicar */
+button:active {
+  transform: translateY(0);
+}
+button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+button:focus:not(:active)::after {
+  animation: ripple 0.6s ease-out;
+}
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+/* Responsividade para telas menores */
+@media (max-width: 480px) {
+  .corpo {
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+  h1 {
+    font-size: 1.5rem;
+  }
 }

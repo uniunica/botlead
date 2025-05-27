@@ -9,21 +9,20 @@
   </head>
   <body>
     <div class="corpo">
-      <h1>Rastreador de Leads - Polos</h1>
-      <br/>
+      <h1>Rastreador de Leads Polos</h1>
       <form method="POST" action="/">
         <label>Estado:</label>
-        <input type="text" name="estado" required /><br /><br />
+        <input type="text" name="estado" required />
         <label>Cidade:</label>
-        <input type="text" name="cidade" required /><br /><br />
+        <input type="text" name="cidade" required />
         <label>Tipo de Instituição:</label>
         <select name="tipo">
           <option value="escola">Escola Técnica</option>
           <option value="colégio">Colégio Profissionalizante</option>
           <option value="instituto">Instituto</option>
-        </select><br/><br/>
+        </select>
         <label>Quantidade de leads:</label>
-        <input type="number" name="quantidade" min="10" max="200" required/><br/><br/>
+        <input type="number" name="quantidade" min="10" max="200" required/>
         <button type="submit">Buscar Leads</button>
       </form>
     </div>
