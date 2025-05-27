@@ -1,30 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <title>Rastreador de Leads</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rastreador de Leads Educacionais</title> <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Formulário para rastrear leads de polos educacionais com base na localização e tipo de instituição." />
     <link rel="stylesheet" href="/static/style.css" />
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-  </head>
-  <body>
-    <div class="corpo">
-      <h1>Rastreador de Leads Polos</h1>
-      <form method="POST" action="/">
-        <label>Estado:</label>
-        <input type="text" name="estado" required />
-        <label>Cidade:</label>
-        <input type="text" name="cidade" required />
-        <label>Tipo de Instituição:</label>
-        <select name="tipo">
-          <option value="escola">Escola Técnica</option>
-          <option value="colégio">Colégio Profissionalizante</option>
-          <option value="instituto">Instituto</option>
-        </select>
-        <label>Quantidade de leads:</label>
-        <input type="number" name="quantidade" min="10" max="200" required/>
-        <button type="submit">Buscar Leads</button>
-      </form>
-    </div>
-  </body>
+</head>
+<body>
+    <main class="container" role="main"> <h1>Rastreador de Leads Polos</h1>
+
+        <form method="POST" action="/">
+            <div class="form-group">
+                <label for="estado">Estado:</label>
+                <input type="text" id="estado" name="estado" required aria-required="true" placeholder="Ex: MG, SP, RJ" />
+            </div>
+
+            <div class="form-group">
+                <label for="cidade">Cidade:</label>
+                <input type="text" id="cidade" name="cidade" required aria-required="true" placeholder="Ex: Belo Horizonte" />
+            </div>
+
+            <div class="form-group">
+                <label for="tipo_instituicao">Tipo de Instituição:</label>
+                <select id="tipo_instituicao" name="tipo" required aria-required="true">
+                    <option value="escola">Escola Técnica</option>
+                    <option value="colégio">Colégio Profissionalizante</option>
+                    <option value="instituto">Instituto</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantidade">Quantidade de leads:</label>
+                <input type="number" id="quantidade" name="quantidade" min="10" max="200" required aria-required="true" placeholder="10-200" aria-describedby="quantidade-hint" />
+                <small id="quantidade-hint" class="form-text-hint">Informe um número entre 10 e 200.</small>
+            </div>
+
+            <button type="submit" class="btn-submit">Buscar Leads</button>
+        </form>
+    </main>
+
+    </body>
 </html>

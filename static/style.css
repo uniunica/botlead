@@ -3,15 +3,21 @@
   --primary-dark: #5a189a;
   --primary-light: #9d4edd;
   --secondary-color: #f72585;
-  --gradient-start: #a18cd1;
+  --gradient-start: #a18cd1; /* Mantendo seus gradientes originais */
   --gradient-end: #fbc2eb;
   --text-dark: #2b2d42;
   --text-light: #f8f9fa;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --input-bg: rgba(255, 255, 255, 0.8);
+  --input-border: rgba(123, 44, 191, 0.2);
+  --input-border-focus: var(--primary-light);
+  --placeholder-color: #9fa6b2; /* Um pouco mais suave */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08); /* Sombras um pouco mais sutis */
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --border-radius: 12px;
+  --font-main: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -23,18 +29,17 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
+  font-family: var(--font-main);
   background: linear-gradient(
     135deg,
     var(--gradient-start),
     var(--gradient-end)
   );
   color: var(--text-dark);
-  padding: 20px;
+  padding: 20px; /* Garante espaço nas bordas em telas pequenas */
   line-height: 1.6;
 }
-/* Efeito de partículas no fundo (opcional) */
+/* Efeito de partículas no fundo (opcional) - Mantido como está */
 body::before {
   content: "";
   position: fixed;
@@ -43,26 +48,36 @@ body::before {
   width: 100%;
   height: 100%;
   background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><circle cx="25" cy="25" r="2" fill="white"/><circle cx="75" cy="50" r="1.5" fill="white"/><circle cx="15" cy="80" r="1" fill="white"/><circle cx="90" cy="20" r="1.5" fill="white"/></svg>');
-  z-index: -1;
+  z-index: -1; /* Para ficar atrás de todo o conteúdo */
 }
 /* Container principal com efeito de vidro (glassmorphism) */
-.corpo {
-  background: rgba(255, 255, 255, 0.85);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+/* ATUALIZADO: .corpo para .container para corresponder ao HTML */
+.container {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.85
+  ); /* Levemente mais opaco para melhor leitura */
+  -webkit-backdrop-filter: blur(12px); /* Levemente mais blur */
+  backdrop-filter: blur(12px);
   border-radius: var(--border-radius);
-  padding: 2.5rem;
+  padding: 2rem 2.5rem; /* Ajuste no padding para mais respiro horizontal */
   width: 100%;
-  max-width: 450px;
+  max-width: 480px; /* Aumentado um pouco para acomodar melhor o conteúdo */
   box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transform-style: preserve-3d;
-  perspective: 1000px;
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Borda do vidro um pouco mais visível */
+  /* transform-style e perspective são mais úteis para transformações 3D diretas nos filhos,
+     podem ser mantidos se planeja animações 3D, ou removidos para simplificar. */
+  /* transform-style: preserve-3d; */
+  /* perspective: 1000px; */
+  margin-top: 1rem; /* Espaço no topo em telas menores */
+  margin-bottom: 1rem; /* Espaço na base em telas menores */
 }
-/* Título com gradiente e efeito 3D sutil */
+/* Título com gradiente e efeito 3D sutil - Mantido como está, já é ótimo */
 h1 {
   text-align: center;
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 5vw, 2rem); /* Tamanho responsivo */
   background: linear-gradient(
     45deg,
     var(--primary-color),
@@ -75,8 +90,8 @@ h1 {
   letter-spacing: -0.5px;
   position: relative;
   padding-bottom: 0.5rem;
+  margin-bottom: 2rem; /* Aumentado o espaço abaixo do título */
 }
-/* Linha decorativa abaixo do título */
 h1::after {
   content: "";
   position: absolute;
@@ -96,45 +111,75 @@ h1::after {
 form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem; /* Aumentado o espaço entre os form-groups */
 }
-/* Labels estilizadas */
+/* NOVO: Estilo base para .form-group, embora o 'gap' no form já faça o espaçamento vertical */
+.form-group {
+  display: flex;
+  flex-direction: column; /* Garante que label e input fiquem um sobre o outro */
+  gap: 0.4rem; /* Espaço entre label e input dentro do grupo */
+}
 label {
   font-weight: 600;
   color: var(--primary-dark);
   font-size: 0.9rem;
-  display: block;
+  display: block; /* Já era block, mantido */
   transition: var(--transition);
+  /* margin-bottom foi movido para o gap do .form-group */
 }
-/* Inputs modernizados com efeito de foco animado */
 input[type="text"],
 input[type="number"],
 select {
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem; /* Aumentado um pouco o padding interno */
   width: 100%;
-  border: 2px solid rgba(123, 44, 191, 0.2);
+  border: 2px solid var(--input-border);
   border-radius: var(--border-radius);
   font-size: 1rem;
+  font-family: var(--font-main); /* Garantir a mesma fonte */
   transition: var(--transition);
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: var(--input-bg);
   box-shadow: var(--shadow-sm);
+  color: var(--text-dark); /* Cor do texto digitado */
+}
+/* Estilo para o select parecer mais com os inputs */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%235a189a" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Ícone de seta SVG (roxo escuro) */
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.2em;
+  padding-right: 2.8rem; /* Espaço para a seta */
+}
+select:focus {
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%237b2cbf" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Ícone de seta SVG (roxo primário) no foco */
 }
 /* Efeito de foco com sombra e borda colorida */
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--primary-light);
-  box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.2);
-  transform: translateY(-1px);
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.25); /* Sombra do foco um pouco mais visível */
+  transform: translateY(-1px); /* Mantido o leve deslocamento */
 }
 /* Placeholder estilizado */
 input::placeholder {
-  color: #adb5bd;
-  opacity: 1;
+  color: var(--placeholder-color);
+  opacity: 1; /* Necessário para navegadores baseados em WebKit */
+}
+/* NOVO: Estilo para a dica abaixo do input de quantidade */
+.form-text-hint {
+  font-size: 0.8rem;
+  color: var(--primary-dark);
+  opacity: 0.9;
+  /* margin-top já é tratado pelo gap do .form-group */
+  padding-left: 0.1rem; /* Pequeno recuo para alinhar com o texto do input se necessário */
 }
 /* Botão com gradiente e efeito hover animado */
-button {
-  padding: 0.75rem;
+/* ATUALIZADO: Seletor para ser mais específico com a classe .btn-submit */
+.btn-submit {
+  padding: 0.85rem 1rem; /* Consistente com inputs */
   background: linear-gradient(
     45deg,
     var(--primary-color),
@@ -142,29 +187,34 @@ button {
   );
   color: var(--text-light);
   font-weight: 600;
+  font-family: var(--font-main);
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--transition);
   box-shadow: var(--shadow-md);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.75px; /* Aumentado um pouco o espaçamento */
   font-size: 0.9rem;
-  margin-top: 0.5rem;
-  position: relative;
-  overflow: hidden;
+  margin-top: 0.75rem; /* Espaço acima do botão */
+  position: relative; /* Para o efeito de ripple */
+  overflow: hidden; /* Para o efeito de ripple */
 }
-/* Efeito de brilho no hover */
-button:hover {
-  background: linear-gradient(45deg, var(--primary-dark), #d00069);
-  box-shadow: 0 5px 15px rgba(122, 44, 191, 0.4);
-  transform: translateY(-2px);
+.btn-submit:hover {
+  background: linear-gradient(
+    45deg,
+    var(--primary-dark),
+    #d00069
+  ); /* Mantido */
+  box-shadow: 0 6px 18px rgba(122, 44, 191, 0.4); /* Sombra do hover um pouco maior */
+  transform: translateY(-2px); /* Mantido */
 }
-/* Efeito de onda ao clicar */
-button:active {
-  transform: translateY(0);
+.btn-submit:active {
+  transform: translateY(0); /* Mantido */
+  box-shadow: var(--shadow-sm); /* Sombra menor ao clicar */
 }
-button::after {
+/* Efeito de onda ao clicar - Mantido como está, já é ótimo */
+.btn-submit::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -177,7 +227,8 @@ button::after {
   transform: scale(1, 1) translate(-50%);
   transform-origin: 50% 50%;
 }
-button:focus:not(:active)::after {
+/* ATUALIZADO: Seletor para ser mais específico */
+.btn-submit:focus:not(:active)::after {
   animation: ripple 0.6s ease-out;
 }
 @keyframes ripple {
@@ -186,17 +237,35 @@ button:focus:not(:active)::after {
     opacity: 0.5;
   }
   100% {
-    transform: scale(20, 20);
+    transform: scale(20, 20); /* Ajuste conforme o tamanho do botão */
     opacity: 0;
   }
 }
 /* Responsividade para telas menores */
-@media (max-width: 480px) {
-  .corpo {
+@media (max-width: 520px) {
+  /* Ponto de quebra um pouco maior */
+  /* ATUALIZADO: .corpo para .container */
+  .container {
     padding: 1.5rem;
-    max-width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    /* max-width: 100% não é necessário pois width: 100% e o padding do body já controlam */
   }
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.6rem; /* Ajuste fino no tamanho */
+    margin-bottom: 1.5rem;
+  }
+  form {
+    gap: 1.25rem;
+  }
+  input[type="text"],
+  input[type="number"],
+  select,
+  .btn-submit {
+    padding: 0.75rem 0.9rem; /* Padding um pouco menor para telas pequenas */
+    font-size: 0.95rem;
+  }
+  .btn-submit {
+    letter-spacing: 0.5px;
   }
 }
