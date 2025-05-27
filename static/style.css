@@ -48,8 +48,8 @@ body::before {
 /* Container principal com efeito de vidro (glassmorphism) */
 .corpo {
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border-radius: var(--border-radius);
   padding: 2.5rem;
   width: 100%;

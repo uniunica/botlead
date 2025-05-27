@@ -42,8 +42,8 @@ body::before {
 }
 .card {
   background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
   padding: 2.5rem;
