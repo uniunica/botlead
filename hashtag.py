@@ -100,87 +100,62 @@ def coletar_links_de_posts_recentes(driver, hashtag, quantidade_posts):
     # É crucial dar tempo suficiente para a página carregar, especialmente a grade de posts.
     simular_tempo_humano(5, 8) # Aumentar um pouco a simulação de tempo inicial
 
-    # --- PAUSA PARA DEBUG MANUAL (descomente se precisar inspecionar) ---
-    # logging.info("PÁGINA DA HASHTAG CARREGADA. Verifique o layout e os seletores.")
-    # input(">>> Pressione Enter no console para tentar coletar os links dos posts...")
-    # --------------------------------------------------------------------
+    post_links = []
+    tentativas_scroll = 0
+    max_tentativas = 10
 
-    # Tentativa de scroll inicial para ajudar a carregar elementos que podem estar "lazy-loaded"
-    try:
-        logging.info("Realizando scroll inicial na página da hashtag...")
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight*0.35);") # Scroll para baixo para carregar mais posts
-        simular_tempo_humano(1, 3)
-        driver.execute_script("window.scrollTo(0, 0);") # Opcional: voltar ao topo
-        simular_tempo_humano(1, 2)
-    except Exception as e_scroll:
-        logging.warning(f"Erro durante scroll inicial: {e_scroll}")
+    while len(post_links) < quantidade_posts and tentativas_scroll < max_tentativas:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        simular_tempo_humano(2, 4)
 
-    links_posts = set()
+        post_links = driver.find_elements(By.XPATH, "//a[contains(@href, '/p/') and @role='link']")
+        tentativas_scroll += 1
+
+    logging.info(f"Encontrados {len(post_links)} posts após {tentativas_scroll} scrolls.")
 
     try:
-        # NOVO SELETOR XPath:
-        # 1. Encontra todas as <div class="_aagw">.
-        # 2. Dentro de cada uma dessas divs, encontra o link <a> que contém '/p/' em seu href.
-        # Este XPath assume que o link <a> é um descendente direto ou indireto da div._aagw.
-        post_links_xpath = "//div[@class='_aagw']//a[contains(@href, '/p/')]"
-
-        # Se a classe _aagw for do próprio link <a> (menos provável pela sua descrição):
-        # post_links_xpath = "//a[@class='_aagw' and contains(@href, '/p/')]"
-
-        logging.info(f"Tentando encontrar links de posts com o seletor: {post_links_xpath}")
-
-        # Aumentar o tempo de espera para garantir que os elementos tenham chance de carregar,
-        # especialmente se a conexão for lenta ou a página for pesada.
-        WebDriverWait(driver, 25).until(
-            EC.presence_of_all_elements_located((By.XPATH, post_links_xpath))
+        # Esperar pelos links de posts
+        posts_xpath = "//a[contains(@href, '/p/') and @role='link']"
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_all_elements_located((By.XPATH, posts_xpath))
         )
 
-        # Coleta os elementos <a> que são os links para os posts
-        post_link_elements = driver.find_elements(By.XPATH, post_links_xpath)
-        logging.info(f"Número de elementos de link de post encontrados com o seletor principal: {len(post_link_elements)}")
+        post_links = driver.find_elements(By.XPATH, posts_xpath)
+        logging.info(f"Encontrados {len(post_links)} posts potenciais.")
 
-        if not post_link_elements:
-            logging.warning("Nenhum elemento de link de post encontrado com o seletor principal. Isso pode indicar que o seletor está desatualizado ou a página não carregou como esperado.")
-            # Tentativa de um seletor de fallback mais genérico para diagnóstico (pode ser menos preciso)
-            fallback_xpath = "//article//a[contains(@href, '/p/')]" # Um seletor comum de posts dentro de <article>
-            logging.info(f"Tentando seletor de fallback: {fallback_xpath}")
+        abertos = 0
+        for i, link in enumerate(post_links):
+            if abertos >= quantidade_posts:
+                break
+
             try:
-                post_link_elements = WebDriverWait(driver, 10).until(
-                    EC.presence_of_all_elements_located((By.XPATH, fallback_xpath))
-                )
-                logging.info(f"Com seletor de fallback, encontrados {len(post_link_elements)} elementos.")
-            except TimeoutException:
-                logging.warning("Seletor de fallback também não encontrou elementos. A estrutura da página pode ter mudado significativamente.")
-                return [] # Retorna lista vazia se nada for encontrado
+                # Rolar até o elemento para garantir visibilidade
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", link)
+                simular_tempo_humano(1, 2)
 
-        # Itera sobre os elementos encontrados e extrai os links
-        for link_element in post_link_elements:
-            if len(links_posts) >= quantidade_posts:
-                break # Já coletamos a quantidade desejada
-            try:
-                link = link_element.get_attribute('href')
-                if link and '/p/' in link: # Confirma que é um link de post
-                    links_posts.add(link)
-                    logging.debug(f"Link de post adicionado: {link}")
-                else:
-                    logging.debug(f"Elemento encontrado com href inválido ou não é link de post: {link}")
-            except Exception as e_attr:
-                # Isso pode acontecer se o elemento se tornar "stale"
-                logging.warning(f"Erro ao obter href de um link_element: {e_attr}")
+                # Clicar no link para abrir o modal
+                link.click()
+                logging.info(f"Modal do post {i+1} aberto.")
+                abertos += 1
 
-        if not links_posts:
-            logging.warning("Nenhum link de post válido foi adicionado ao set após a iteração.")
-        else:
-            logging.info(f"Coletados {len(links_posts)} links de posts únicos.")
+                # Tempo para visualizar/modal carregar
+                simular_tempo_humano(3, 5)
 
-        return list(links_posts)[:quantidade_posts] # Garante o limite exato, mesmo que mais tenham sido encontrados
+                # Fechar o modal (opcional)
+                close_button_xpath = "//button[@aria-label='Fechar' or @aria-label='Close']"
+                WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, close_button_xpath))
+                ).click()
+
+                simular_tempo_humano(1, 2)  # Pausa entre modais
+
+            except ElementClickInterceptedException:
+                logging.warning(f"Elemento {i+1} bloqueado por overlay. Pulando...")
+            except Exception as e:
+                logging.error(f"Erro ao abrir modal do post {i+1}: {e}")
 
     except TimeoutException:
-        logging.error(f"Timeout final ao esperar os posts na página da hashtag com o seletor: {post_links_xpath}. A página pode não ter carregado os posts esperados ou o seletor está incorreto.")
-        return []
-    except Exception as e:
-        logging.error(f"Erro geral e inesperado ao coletar links de posts: {e}", exc_info=True)
-        return []
+        logging.error("Timeout ao aguardar carregamento dos posts.")
 
 # Função para extrair comentaristas de um post específico
 def extrair_comentaristas_do_post(driver, post_url):
