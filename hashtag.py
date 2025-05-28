@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By # Importa os tipos de localização 
 from selenium.webdriver.chrome.options import Options # Importa opções do Chrome para configuração do navegador
 from selenium.webdriver.support.ui import WebDriverWait # Importa WebDriverWait para esperar por elementos
 from selenium.webdriver.support import expected_conditions as EC # Importa condições esperadas para verificar elementos
-from selenium.common.exceptions import TimeoutException, NoSuchElementException # Importa exceções comuns do Selenium
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementClickInterceptedException # Importa exceções comuns do Selenium
 import time # Importa a biblioteca de tempo para simular pausas
 import random # Importa a biblioteca random para gerar números aleatórios
 import csv # Importa a biblioteca csv para manipulação de arquivos CSV
@@ -123,6 +123,8 @@ def coletar_links_de_posts_recentes(driver, hashtag, quantidade_posts):
         post_links = driver.find_elements(By.XPATH, posts_xpath)
         logging.info(f"Encontrados {len(post_links)} posts potenciais.")
 
+        todos_comentaristas = set()
+
         abertos = 0
         for i, link in enumerate(post_links):
             if abertos >= quantidade_posts:
@@ -141,6 +143,10 @@ def coletar_links_de_posts_recentes(driver, hashtag, quantidade_posts):
                 # Tempo para visualizar/modal carregar
                 simular_tempo_humano(3, 5)
 
+                coments = extrair_comentaristas_do_modal(driver)
+                todos_comentaristas.update(coments)
+                logging.info(f"Post {i+1}: {len(coments)} comentaristas coletados.")
+
                 # Fechar o modal (opcional)
                 close_button_xpath = "//button[@aria-label='Fechar' or @aria-label='Close']"
                 WebDriverWait(driver, 10).until(
@@ -157,115 +163,37 @@ def coletar_links_de_posts_recentes(driver, hashtag, quantidade_posts):
     except TimeoutException:
         logging.error("Timeout ao aguardar carregamento dos posts.")
 
+    return todos_comentaristas
+
 # Função para extrair comentaristas de um post específico
-def extrair_comentaristas_do_post(driver, post_url):
-    logging.info(f"Acessando post: {post_url}")
-    driver.get(post_url)
-    comentaristas = set()
+def extrair_comentaristas_do_modal(driver):
     try:
-        # Esperar a seção de comentários ou o botão de "ver comentários"
-        # Seletor para o botão "Ver todos os X comentários" - PODE MUDAR!
-        # Tenta clicar para expandir comentários se o botão existir
-        try:
-            view_comments_button_xpath = "//button[contains(span/text(),'Ver todos os comentários') or contains(span/text(), 'View all comments')]"
-            view_comments_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, view_comments_button_xpath))
-            )
-            view_comments_button.click()
-            logging.info("Botão 'Ver todos os comentários' clicado.")
-            simular_tempo_humano(2, 4) # Esperar comentários carregarem após clique
-        except TimeoutException:
-            logging.info("Botão 'Ver todos os comentários' não encontrado ou não clicável. Tentando ler comentários diretamente.")
+        # Esperar até que os comentários estejam visíveis
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_all_elements_located((By.XPATH, "//ul//a[contains(@href, '/') and starts-with(@href, '/') and not(contains(@href, '/p/'))]"))
+        )
 
-        # Tentar rolar para carregar mais comentários ou clicar em "carregar mais"
-        # Esta parte é a mais complexa e sujeita a mudanças no Instagram
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        patience = 5 # Número de tentativas de scroll sem novos comentários antes de parar
-        patience_counter = 0
+        # Selecionar todos os links que apontam para perfis (excluindo links de posts, stories, etc.)
+        comentaristas = driver.find_elements(By.XPATH, "//ul//a[contains(@href, '/') and starts-with(@href, '/') and not(contains(@href, '/p/'))]")
 
-        while patience_counter < patience:
-            # Seletor para usernames dos comentaristas - PODE MUDAR MUITO!
-            # Geralmente, o nome do usuário está dentro de um <a> com um atributo específico ou classe.
-            # Exemplo de XPath (altamente propenso a quebrar):
-            # //ul//div[@role='button']/../../div[1]/div[1]/div/span/a (este é complexo e antigo)
-            # Mais comum: dentro de uma lista <ul>, cada <li> é um comentário.
-            # O primeiro link <a> dentro da estrutura do comentário costuma ser o usuário.
-            # Exemplo: "//div[contains(@class, '_a9zr')]//a[contains(@class, 'notranslate')]"
-            # Ou: "//ul//li//a[starts-with(@href, '/') and not(contains(@href, '/p/')) and not(contains(@href, '/tags/'))]"
-            # É FUNDAMENTAL INSPECIONAR O HTML NO MOMENTO DO USO PARA ACHAR O SELETOR CORRETO
+        nomes = set()
+        for el in comentaristas:
+            href = el.get_attribute("href")
+            # Extrair nome do usuário da URL (ex: https://instagram.com/nome -> nome)
+            if href and "instagram.com/" in href:
+                nome = href.split("instagram.com/")[-1].replace("/", "")
+                if nome not in ["", "explore", "reels"]:  # Ignora links genéricos
+                    nomes.add(nome)
 
-            # Seletor focado em encontrar links de perfil dentro da área de comentários
-            # Este seletor tenta ser um pouco mais genérico, mas ainda pode falhar.
-            # O ideal seria um seletor que identifique a lista de comentários e depois os links de usuário dentro dela.
-            commenter_elements_xpath = "//article//div[contains(@class,'EtaWk')]//ul//li//div[contains(@class,'C4VMK')]//a[contains(@class,'sqdOP')]"
-            # O XPATH ACIMA É UM EXEMPLO GENÉRICO E ANTIGO, PROVAVELMENTE NÃO FUNCIONARÁ.
-            # DEVO INSPECIONAR O ELEMENTO NO NAVEGADOR E CRIAR UM XPATH NOVO.
-            # Um padrão mais atualizado pode envolver classes como _a9zc, _a9zd para o comentário
-            # e o link do usuário pode ser algo como:
-            # "//div[contains(@class, '_a9zr')]//span/a" ou "//div[contains(@class, '_a9zr')]//a[@role='link']"
-            # Para este exemplo, vou usar um seletor que busca por links de perfil no corpo do post,
-            # assumindo que a área de comentários está lá.
-            # Este XPath é um PALPITE e precisa ser VERIFICADO:
-            commenter_links_xpath = "//article//ul//a[contains(@href, '/') and not(contains(@href, '/p/')) and string-length(normalize-space(text())) > 0]"
-
-            try:
-                WebDriverWait(driver, 5).until(
-                    EC.presence_of_all_elements_located((By.XPATH, "//article//ul")) # Espera a lista de comentários
-                )
-                # Seletor mais específico para nomes de usuário em comentários (requer inspeção constante)
-                # As classes como '_a9zr' ou '_ap3a _aaco _aacw _aacx _aad7 _aade' são comuns, mas mudam.
-                # Este é um exemplo genérico de como poderia ser estruturado:
-                commenter_elements = driver.find_elements(By.XPATH, "//div[contains(@class, '_a9zr')]//a[@role='link']")
-                if not commenter_elements: # Tentar uma alternativa se o primeiro falhar
-                     commenter_elements = driver.find_elements(By.XPATH, "//ul/li//div[@role='button']/preceding-sibling::div//a")
-
-                # Verifica se encontrou elementos de comentaristas
-                for el in commenter_elements:
-                    username = el.text.strip()
-                    href = el.get_attribute('href')
-                    # Verifica se o texto é um nome de usuário válido e o link é para um perfil
-                    if username and href and f"/{username}/" in href and not "explore/tags" in href:
-                        comentaristas.add(username)
-            except Exception as e_inner:
-                logging.warning(f"Não foi possível extrair comentaristas com o seletor principal: {e_inner}")
-
-            # Lógica de scroll ou "carregar mais"
-            # Tenta encontrar um botão "carregar mais comentários" (geralmente um ícone "+")
-            try:
-                load_more_button_svg_xpath = "//div[@role='button' and .//span[@aria-label='Carregar mais comentários']]" # XPath para SVG
-                load_more_button = driver.find_element(By.XPATH, load_more_button_svg_xpath)
-                # driver.execute_script("arguments[0].scrollIntoView();", load_more_button) # Garante que é visível
-                load_more_button.click()
-                logging.info("Botão 'Carregar mais comentários' (SVG) clicado.")
-                simular_tempo_humano(2, 4)
-                patience_counter = 0 # Reseta a paciência pois novos comentários foram carregados
-                continue # Volta para tentar ler novos comentários
-            except NoSuchElementException:
-                logging.debug("Botão 'Carregar mais comentários' (SVG) não encontrado, tentando rolar.")
-                pass # Prossegue para o scroll se o botão não for encontrado
-            except Exception as e_click:
-                logging.warning(f"Erro ao clicar no botão 'Carregar mais comentários' (SVG): {e_click}")
-                pass
-
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            simular_tempo_humano(1, 2)
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
-                patience_counter += 1
-                logging.debug(f"Scroll não carregou novos comentários. Tentativa {patience_counter}/{patience}")
-            else:
-                patience_counter = 0 # Reseta a paciência pois novos comentários foram carregados
-            last_height = new_height
-
-        logging.info(f"Encontrados {len(comentaristas)} comentaristas únicos no post {post_url}.")
-        return list(comentaristas)
+        return nomes
 
     except TimeoutException:
-        logging.error(f"Timeout ao carregar elementos do post {post_url}.")
-        return []
+        logging.warning("Timeout ao tentar encontrar os comentaristas no modal.")
+        return set()
     except Exception as e:
-        logging.error(f"Erro ao extrair comentaristas do post {post_url}: {e}")
-        return []
+        logging.error(f"Erro ao extrair comentaristas: {e}")
+        return set()
+
 
 # Função para salvar os comentaristas em um arquivo CSV
 def salvar_comentaristas_csv(comentaristas_por_post, nome_arquivo='comentaristas_instagram.csv'):
@@ -320,7 +248,7 @@ if __name__ == "__main__":
         else:
             todos_comentaristas_por_post = {}
             for link_post in links_posts_recentes:
-                comentaristas_do_post = extrair_comentaristas_do_post(driver, link_post)
+                comentaristas_do_post = extrair_comentaristas_do_modal(driver)
                 if comentaristas_do_post: # Apenas adiciona se houver comentaristas
                     todos_comentaristas_por_post[link_post] = comentaristas_do_post
                 simular_tempo_humano(3, 6) # Pausa entre análise de posts
